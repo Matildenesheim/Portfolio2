@@ -1,0 +1,368 @@
+---
+title: "A1_P3_Exam"
+author: "Matilde Nesheim"
+date: "6 dec 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+---
+title: "Assignment 1 - Language Development in ASD - part 3"
+author: "Riccardo Fusaroli"
+date: "August 10, 2017"
+output: word_document
+---
+
+```{r setup, echo=F}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Welcome to the third exciting part of the Language Development in ASD exercise
+
+In this exercise we will delve more in depth with different practices of model comparison and model selection, by first evaluating your models from last time, then learning how to cross-validate models and finally how to systematically compare models.
+
+N.B. There are several datasets for this exercise, so pay attention to which one you are using!
+
+1. The (training) dataset from last time (the awesome one you produced :-) ).
+2. The (test) datasets on which you can test the models from last time:
+* Demographic and clinical data: https://www.dropbox.com/s/ra99bdvm6fzay3g/demo_test.csv?dl=0
+* Utterance Length data: https://www.dropbox.com/s/uxtqqzl18nwxowq/LU_test.csv?dl=0
+* Word data: https://www.dropbox.com/s/1ces4hv8kh0stov/token_test.csv?dl=0
+
+### Exercise 1) Testing model performance
+
+How did your models from last time perform? In this exercise you have to compare the results on the training data () and on the test data. Report both of them. Compare them. Discuss why they are different.
+
+- recreate the models you chose last time (just write the code again and apply it to Assignment2TrainData1.csv)
+- calculate performance of the model on the training data: root mean square error is a good measure. (Tip: google the functions rmse() and predict() )
+- create the test dataset (apply the code from assignment 1 part 1 to clean up the 3 test datasets)
+- test the performance of the models on the test data (Tips: time to reuse "predict()")
+- optional: predictions are never certain, can you identify the uncertainty of the predictions? (e.g. google predictinterval())
+
+
+```{r}
+
+# LOAD DATA
+
+
+setwd("~/Desktop/OneDrive/Cognitive Science/3 semester/Experimental Methods 3/Portfolio_2")
+
+library(pacman)
+#p_load both load the libraries and install packages
+p_load(lmerTest, lme4, ggplot2, pastecs, Metrics, MuMIn, merTools, groupdata2, stringr, dplyr)
+
+
+#old training data load
+traindata = read.csv("Autismdata1.csv", sep = ",")
+traindata$X=NULL
+traindata$ID=as.numeric(traindata$ID)
+traindata$Visit=as.numeric(traindata$Visit)
+
+
+## Exercise 1a - recreate the models you chose last time
+
+m1 = lmer(CHI_MLU ~ Visit + Diagnosis + (1+Visit|ID), data=traindata)
+
+# Exercise 1b - calculate performance of the model on the training data
+sim_train = fitted(m1)
+rmse(sim_train, traindata$CHI_MLU) 
+
+
+# Exercice 1c - TEST DATA 
+#load new data
+demo_test = read.csv("demo_test.csv", sep = ",")
+LU_test = read.csv("LU_test.csv", sep = ",")
+token_test = read.csv("token_test.csv", sep =",")
+
+# CLEAN DATA
+
+#making "Visit" the consistent name
+names(LU_test)[names(LU_test)=="VISIT"]="Visit"
+names(token_test)[names(token_test)=="VISIT"]="Visit"
+
+#making ID the consistent name
+names(token_test)[names(token_test)=="SUBJ"]="ID"
+names(demo_test)[names(demo_test)=="Child.ID"]="ID"
+names(LU_test)[names(LU_test)=="SUBJ"]="ID"
+
+
+LU_test$Visit=str_extract(LU_test$Visit, "\\d")
+token_test$Visit=str_extract(token_test$Visit, "\\d")
+
+#using gsub to remove all dots
+LU_test$ID=gsub("\\.", "", LU_test$ID)
+demo_test$ID=gsub("\\.", "", demo_test$ID)
+token_test$ID=gsub("\\.", "", token_test$ID)
+
+# RENAME 
+
+# using select to create subsets of the data containing only the wanted variables.
+demo_test_sub = dplyr::select(demo_test, ID, Visit, Ethnicity, Diagnosis, Gender, Age, ADOS, MullenRaw, ExpressiveLangRaw)
+
+LU_test_sub = dplyr::select(LU_test, ID, Visit, MOT_MLU, MOT_LUstd, CHI_MLU, CHI_LUstd)
+
+token_test_sub = dplyr::select(token_test, ID, Visit, types_MOT, types_CHI, tokens_MOT, tokens_CHI)
+
+# rename verbalIQ and nonverbalIQ
+names(demo_test_sub)[names(demo_test_sub)=="MullenRaw"]="nonVerbalIQ"
+names(demo_test_sub)[names(demo_test_sub)=="ExpressiveLangRaw"]="verbalIQ"
+
+# merge data
+data1=merge(LU_test_sub,token_test_sub,by=c("ID","Visit"))
+testdata=merge(data1,demo_test_sub,by=c("ID","Visit")) 
+
+# Creating subset with only first visit
+visit1 = subset(testdata[testdata$Visit == "1",])
+
+#Selecting only relevant variables
+Relevantdata=dplyr::select(visit1,ADOS,verbalIQ,nonVerbalIQ,ID)
+
+testdata=testdata[-15:-17]
+
+# Merging the two datasets
+testdata = merge(testdata, Relevantdata, by ="ID")
+
+# make as factor
+testdata$ID=as.factor(testdata$ID)
+
+
+# Renaming the levels as 1 through lengths of levels
+levels(testdata$ID)=1:length(levels(testdata$ID))
+
+# make visit as numeric
+testdata$Visit=as.numeric(testdata$Visit)
+
+
+# Rename gender
+testdata$Gender=as.factor(testdata$Gender)
+testdata$Gender = recode(testdata$Gender, "1"="M", "2" ="F")
+
+testdata$Diagnosis= recode(testdata$Diagnosis,"A"="ASD","B"="TD")
+
+
+# Exercise 1d - Test the performance of the models on the test data 
+sim_test =predict(m1, testdata)
+rmse(sim_test, testdata$CHI_MLU) 
+
+
+```
+
+Report both of them. Compare them. Discuss why they are different.
+
+performance of train data = 0.34
+performance of test data = 1.07
+
+Jo højere tal --> jo flere fejl. MLU.  
+
+
+
+### Exercise 2) Model Selection via Cross-validation (N.B: ChildMLU!)
+
+One way to reduce bad surprises when testing a model on new data is to train the model via cross-validation. 
+
+In this exercise you have to use cross-validation to calculate the predictive error of your models and use this predictive error to select the best possible model.
+
+- Create the basic model of ChildMLU as a function of Time and Diagnosis (don't forget the random effects!).
+- Make a cross-validated version of the model. (Tips: google the function "createFolds";  loop through each fold, train a model on the other folds and test it on the fold)
+- Report the results and comment on them.
+
+- Now try to find the best possible predictive model of ChildMLU, that is, the one that produces the best cross-validated results.
+
+- Bonus Question 1: How would you go comparing the performance of the basic model and the cross-validated model on the testing set?
+- Bonus Question 2: What is the effect of changing the number of folds? Can you plot RMSE as a function of number of folds?
+- Bonus Question 3: compare the cross-validated predictive error against the actual predictive error on the test data
+
+
+
+```{r}
+p_load(MuMin)
+# Vi skal lave et loop med vores training data for at teste det gennem cross-validation. Herefter skal vi finde den best possible predictive model of CHI_MLU, som produces de bedste cross-validated resultater. 
+
+#cat_col = sørger for lige mange af hver diagnosis i hver fold.
+#id_col = hvert barn kun er i en fold, så vi får lige fordelte folds. 
+
+traindata= fold(traindata, k=4, cat_col = "Diagnosis", id_col = "ID")
+
+#Creating function for automatic crossvalidation. Outputs R2c, R2m and RMSE for each fold, as well the mean values across folds
+
+cv = function(data, k, model, dependent){
+#Creating variables for storing performances
+rmselist = list() # så vi kan gemme vores værdier vi får, når vi tester dem
+r2list = list() # så vi kan gemme vores værdier vi får, når vi tester dem
+#Creating loop
+for (i in 1:k){
+  train = data[data$.folds != i,]    #creating training set (all folds except the one)
+  validation = data[data$.folds == i,] #creating testing/validation set (the current fold)
+  model = lmer(model, train, REML = F)   #running lmer on the model specified in the function call
+  rmselist[i] = Metrics::rmse(validation[[dependent]], predict(model, validation, allow.new.levels = T))  #saving model rmse, så på den i'ne plads i listen tilføjer vi rmse-værdien for modellen. 
+  r2list[i] = as.data.frame(r.squaredGLMM(model))     #saving r2c and r2m værdier for modellen
+}
+#doing some wrangling so the R2 outputs can be printed in a nice format
+r2list = as.data.frame(t(as.data.frame(r2list)))
+colnames(r2list) = c("R2m", "R2c")
+rownames(r2list) = seq(1:k)
+r2list = as.data.frame(r2list)
+
+#returning the wanted values
+return(c('RMSE' = rmselist, 'Mean RMSE' = mean(unlist(rmselist)), r2list,  'Mean R2m' = mean(r2list$R2m), 'Mean R2c' =  mean(r2list$R2c)))
+}
+
+#Nu har vi lavet loopet, som vi kører funktionen på. 
+# Nu laver vi en model, som vi vil teste i loopet: 
+m1 = "CHI_MLU ~ Visit + Diagnosis + (1+Visit|ID)"
+
+#Ved denne linje, der kører loopet ud fra følgende bestemmelser:
+#Traindata = det datasæt, som vi vil bruge. 4 = antal folds, som vi vil lave. m1 = den model, som vi vil have funktionen/loopet til at køre. 'CHI_MLU' = den dependent variable, som vi vil have gennem funktionen.
+# Vi kan ændre alle disse variabler uden at ændre i loopet, og dermed køre flere forskellige modeller, folds, data etc nemt uden at ændre i loopet, men blot denne ene linje: 
+
+cv(traindata, 4, m1, 'CHI_MLU')
+
+
+# Make more models to compare and run through loop
+m2 = "CHI_MLU ~ Visit + Diagnosis + MOT_MLU+ (1+Visit|ID)"
+cv(traindata, 4, m2, 'CHI_MLU')
+
+m3 = "CHI_MLU ~ Diagnosis*Visit + (1+Visit|ID)"
+cv(traindata, 4, m3, 'CHI_MLU')
+
+m4 = "CHI_MLU ~ Visit + Diagnosis + verbalIQ + (1+Visit|ID)"
+cv(traindata, 4, m4, 'CHI_MLU')
+
+
+```
+
+m1: 
+Root Mean Square Error is the standard deviation of the resitualds. Residuals = how far from the regression line the data points are. Should be as low as possible.  
+
+Mean rmse: skal være så lav som mulig
+mean r2m = skal være højest
+
+
+### Exercise 3) Assessing the single child
+
+Let's get to business. This new kiddo - Bernie - has entered your clinic. This child has to be assessed according to his group's average and his expected development.
+
+Bernie is one of the six kids in the test dataset, so make sure to extract that child alone for the following analysis.
+
+You want to evaluate:
+
+- how does the child fare in ChildMLU compared to the average TD child at each visit? Define the distance in terms of absolute difference between this Child and the average TD.
+(Tip: recreate the equation of the model: Y=Intercept+BetaX1+BetaX2, etc; input the average of the TD group  for each parameter in the model as X1, X2, etc.).
+
+- how does the child fare compared to the model predictions at Visit 6? Is the child below or above expectations? (tip: use the predict() function on Bernie's data only and compare the prediction with the actual performance of the child)
+
+```{r}
+#bernie subset
+bernie=subset(testdata,ID=="2")
+
+berniedata = lmer(CHI_MLU ~ Visit + Diagnosis + MOT_MLU+verbalIQ + (1+Visit|ID),traindata)
+
+summary(berniedata)
+
+#subset over traindata with only Visit 1 
+tsubset = subset(traindata, Visit =="1")
+#subset over visit1subset with only TD children
+tsub=subset(traindata, Diagnosis=="TD")
+
+# VISIT 1 MEAN CHI_MLU
+mean(tsub$CHI_MLU)  #typically developing child in visit 1, CHI_MLU = 1.31
+bernie$CHI_MLU[1]  # bernie's mean, CHI_MLU = 1.98. Better than typically developed child. 
+mean(tsub$CHI_MLU)-bernie$CHI_MLU[1] # Bernie produces 0.67 CHI_MLU more than TD children. 
+
+# Loop
+
+avgMOTMLU = tsub %>% 
+  group_by(Visit) %>% 
+  summarize(MOT_MLU = mean(MOT_MLU))
+
+avgCHI_MLU = tsub %>%
+  group_by(Visit) %>%
+  summarize(CHI_MLU = mean(CHI_MLU))
+avgMOTMLU[2]
+avgCHI_MLU
+
+# To see the difference between Bernie and TD children across all visits.  
+bernie$CHI_MLU - avgCHI_MLU[2]
+
+# dataframe
+td_chi = data.frame(ID = rep(300, 6), Visit = seq(1,6), Diagnosis = "TD", verbalIQ = mean(tsub$verbalIQ), MOT_MLU = avgMOTMLU[2], CHI_MLU = avgCHI_MLU[2])
+
+bernie = dplyr::select(bernie, ID, Visit, Diagnosis, verbalIQ, MOT_MLU,CHI_MLU)
+avgTD_bernie = rbind(td_chi,bernie)
+
+# bind it together
+avgTD_bernie = rbind(td_chi, bernie)
+avgTD_bernie$ID = as.factor(avgTD_bernie$ID)
+
+#plot CHI_MLU and Visit
+ggplot(avgTD_bernie, aes(Visit, CHI_MLU, color = ID)) +
+  geom_point() +
+  geom_line()
+
+# To see the TD children avg through visits 
+td_chi
+
+# mean verbalIQ for TD = 20.15 
+mean(tsub$verbalIQ)
+
+# PREDICT BERNIE
+#use predict function to predict bernie... 
+predict(berniedata,bernie, allow.new.levels = T)
+
+predictbernie = bernie
+predictbernie$CHI_MLU = predict(berniedata, bernie, allow.new.levels = T)
+predictbernie$ID = rep("predictbernie", 6)
+
+avgTD_bernie = rbind(avgTD_bernie, predictbernie)
+
+# Visit 6  
+B6 = subset(bernie, Visit ==6)
+pred = predict(berniedata, B6)
+B6$CHI_MLU - pred
+
+
+#plot predicted bernie vs real bernie 
+ggplot(avgTD_bernie, aes(Visit, CHI_MLU, color = ID)) +
+  geom_point()+
+  geom_line()
+
+```
+
+
+### OPTIONAL: Exercise 4) Model Selection via Information Criteria
+Another way to reduce the bad surprises when testing a model on new data is to pay close attention to the relative information criteria between the models you are comparing. Let's learn how to do that!
+
+Re-create a selection of possible models explaining ChildMLU (the ones you tested for exercise 2, but now trained on the full dataset and not cross-validated).
+
+Then try to find the best possible predictive model of ChildMLU, that is, the one that produces the lowest information criterion.
+
+- Bonus question for the optional exercise: are information criteria correlated with cross-validated RMSE? That is, if you take AIC for Model 1, Model 2 and Model 3, do they co-vary with their cross-validated RMSE?
+
+### OPTIONAL: Exercise 5): Using Lasso for model selection
+Welcome to the last secret exercise. If you have already solved the previous exercises, and still there's not enough for you, you can expand your expertise by learning about penalizations. Check out this tutorial: http://machinelearningmastery.com/penalized-regression-in-r/ and make sure to google what penalization is, with a focus on L1 and L2-norms. Then try them on your data!
+
+
+
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
