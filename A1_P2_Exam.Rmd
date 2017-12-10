@@ -1,0 +1,383 @@
+---
+title: "Assignment 1 - Language Development in ASD - part 2"
+author: "Matilde Nesheim"
+date: "14/9 2017"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Language development in Autism Spectrum Disorder (ASD)
+
+Background: Autism Spectrum Disorder is often related to language impairment. However, this phenomenon has not been empirically traced in detail: i) relying on actual naturalistic language production, ii) over extended periods of time. We therefore videotaped circa 30 kids with ASD and circa 30 comparison kids (matched by linguistic performance at visit 1) for ca. 30 minutes of naturalistic interactions with a parent. We repeated the data collection 6 times per kid, with 4 months between each visit. We transcribed the data and counted: 
+i) the amount of words that each kid uses in each video. Same for the parent.
+ii) the amount of unique words that each kid uses in each video. Same for the parent.
+iii) the amount of morphemes per utterance (Mean Length of Utterance) displayed by each child in each video. Same for the parent. 
+
+This data is in the file you prepared in the previous class. 
+
+NB. A few children have been excluded from your datasets. We will be using them next week to evaluate how good your models are in assessing the linguistic development in new participants.
+
+We then want to test the language trajectory of child and parent over time.
+
+This Markdown is structured in the following way:
+
+1. The exercises: read them carefully. Under each exercise you will have to write your answers, once you have written and run the code. This is the part that you have to directly send to the teachers.
+2. An (optional) guided template full of hints for writing the code to solve the exercises. Fill in the code and the paragraphs as required. Then report your results under the exercise part.
+3. In exercise 4 you will be asked to create the best possible model of language development in TD and ASD children, picking and choosing whatever additional variables you want from the dataset. Next time, the models produced by the different groups will compete against each other to see who can produce the best model, so choose carefully!
+
+You will have to have a github repository for the code and send the answers to Celine and Riccardo without code (but a link to your github repository). This way we can check your code, but you are also forced to figure out how to report your analyses :-)
+
+N.B. The following lines are a summary of the questions to be answered, the step-by-step instructions and tips are below.
+
+## Exercise 1) Preliminary Data Exploration
+  
+Describe the participant samples in the dataset (e.g. by diagnosis, age, etc.). Do you think the two groups are well balanced? If not, what do you think was the reason?
+
+- When comparing the two participant of typically developing (TD) and Autism Spectrum Disorder (ASD), we observe some differences across factors.
+
+Demographic Variables
+Age: In respect to age, TD's are significantly younger than ASD, by an average of 12.6 months. 
+Gender: There is no significant difference regarding gender across the two groups. In the ASD group there are 143 females, and 23 males. In the TD group there is 152 females and 34 males. So whilst there is no significant difference between groups, the within group sample is highly biased. 
+Ethnicity: No significant difference in ethnicity across the groups.
+Visits: No significant difference across groups. 
+
+Clinical Variables
+ADOS: There is a significant difference between the groups regarding ADOS scores, with TD children scoring on average approximately 13 points lower than ASD children. 
+Verbal IQ: There is a significant difference between the groups regarding Verbal IQ, with TD children scoring on average 2.78 points higher than ASD children. 
+Non-Verbal IQ: There is a non-significant difference between the groups regarding Non-Verbal IQ. However, TD chldren show a slightly lower score, on average 0.89 lower than ASD group. 
+Number of Words Used: There is a significant difference between the groups regarding Tokens, with TD children producing on average 182 more words than ASD children. 
+Types: There is a significant difference between the groups regarding Types, with TD children producing on average 52.1 more unique words than ASD children. 
+MLU of children: There is a significant difference between the groups regarding MLU, with TD children producing on average a MLU 0.66 longer than ASD children. 
+MLU of parents: There is a significant difference between the groups regarding MLU, with TD children's parents producing on average a MLU 0.49 longer than ASD children's parents. 
+
+We conclude that the groups are not well balanced. Whilst there is only sifnicant difference in age within the demographic variables, the 12.6 month average difference can have a huge impact as language aquisition develops so rapidly in this phase. Whilst gender was not signifcantly different between groups, there is a huge over representation of females within the groups. Clinincal varibales are mostly significantly different, although this has little impact on our judgement of how well balanced the groups are, as we expect a difference between ASD and TD in these measures.
+
+### Exercise 2) Children learning language: the effects of time and ASD
+Describe linguistic development in TD and ASD children in terms of Mean Length of Utterance (MLU)?
+
+The childrens MLU changes significantly over time, but is however not significantly affected by diagnosis. (Beta = 0.23, se = 0.02, t-value = 9.516, p<0.05). The R^2m that explains the models fixed effects (Visit + Diagnosis) explains 22% of the varience.
+
+### Exercise 3) Child directed speech as a moving target
+Describe how parental use of language changes over time in terms of MLU. What do you think is going on?
+
+Parental use of language significantly changes over time (beta = 0.12, se = 0.018, p<0.05) and significantly by diagnosis (beta = 0.50, se = 0.11, p<0.05) which could be due to parents simplify their speech if their child can't "keep up" with parents, so parent's language will be understandable to their child.
+
+### Exercise 4) Looking into "individual differences" (demographic, clinical or cognitive profiles)
+The dataset contains some additional variables characterizing the kids’ cognitive and clinical profile: ADOS (autism severity), MSEL EL (Expressive Language, that is, verbal IQ, or linguistic skills at first visit as assessed by a psychologist using Mullen Scales of Early Learning), MSEL VR (Visual Reception, used as a proxy for non verbal IQ at first visit), Age, Gender, Ethnicity. Would it make sense to add any of them to your model of linguistic trajectories? Create the best possible model (the one that best explain the data, with MLU as outcome). Next time your model will be tested on new participants, and we will proclaim a winner. Describe your strategy to select the best models (how did you choose the variables to include?) and send the code to Riccardo and Celine.
+
+We see, that CHI_MLU is best predicted by Visit (beta = 0.19, se = 0.02, p<0.05), by MOT_MLU(beta = 0.34, se = 0.05, p<0.05) and verbalIQ (beta = 0.06, se = 0.007, p<0.05) with 55 % explained variance. 
+
+### [OPTIONAL] Exercise 5) Comment on how the three linguistic variables measure linguistic performance (the so-called "construct validity" of the measures). Do they express the same variance?
+
+[HERE GOES YOUR ANSWER]
+
+### Structure of the code chunks
+
+Basic stuff:
+- Loading the libraries
+- Setting the directory and loading the data
+- Look at the data (which variables are there? Are they in the right format?) and describe the participants (by diagnosis)
+
+We will try to answer three questions:
+
+- Do children with ASD develop language differently from non-ASD children?
+- Do parents speak differently to children with ASD than to non-ASD ones?
+- Which variables should we use to best explain the child linguistic performance?
+  
+### Loading the relevant libraries
+
+Load necessary libraries : what will you need?
+
+- e.g. something to plot with
+- e.g. mixed effects models
+
+```{r Load Libraries}
+library(lmerTest)
+library(lme4)
+library(ggplot2)
+library(pastecs)
+library(MuMIn)
+```
+
+### Define your working directory and load the data
+
+- Create a new variable called locpath (localpath)
+- Set it to be equal to your working directory
+- Move to that directory (setwd(locpath))
+- Load the data you saved last time (use read_csv(fileName))
+
+```{r Load Data}
+
+
+setwd("~/Desktop/OneDrive/Cognitive Science/3 semester/Experimental Methods 3/Portfolio2")
+data = read.csv("Autismdata1.csv", sep = ",")
+#to remove first coloum
+data$X=NULL
+
+data$ID = as.factor(data$ID)
+data$Visit = as.factor(data$Visit)
+
+
+
+```
+
+### Characterize the participants (Exercise 1)
+
+Identify relevant variables: participants demographic characteristics, diagnosis, ADOS, Verbal IQ, Non Verbal IQ, Visit, Number of words used, Number of unique words used, length of utterance in both child and parents.
+
+Make sure the variables are in the right format.
+
+Describe the characteristics of the two groups of participants and whether the two groups are well matched.
+
+```{r}
+library(ggplot2)
+library(pastecs)
+#make as factor 
+data$ID = as.factor(data$ID)
+data$Visit = as.factor(data$Visit)
+#dataset that only contains visit 1, so we can see how old the children are when starting the experiment 
+
+#AGE STATS
+d1 = subset(data, Visit ==1)
+
+#to get mean age for diagnosis and age
+by(d1$Age, d1$Diagnosis, stat.desc)
+
+#boxplot it to see 
+ggplot(d1, aes(Diagnosis, Age)) + 
+  geom_boxplot()
+
+#make a violinplot
+ggplot(d1, aes(Diagnosis, Age)) +
+  geom_violin()
+
+#see if the difference between ASD and TD children is significant 
+model = glm(Age ~ Diagnosis, family = gaussian, d1)
+summary(data[data$Diagnosis=="ASD",]$Age)
+summary(data[data$Diagnosis=="TD",]$Age)
+summary(model)
+
+#Wee see, that it is not balanced by age, TD children are significantly younger. 
+
+
+## GENDER STATS 
+#To see gender differences in diagnosis 
+model1 = glm(Gender ~ Diagnosis, family = binomial, data)
+summary(data[data$Diagnosis=="ASD",]$Gender)
+summary(data[data$Diagnosis=="TD",]$Gender)
+summary(model1)
+#no significant difference in gender across the two groups. 
+
+
+## ADOS STATS 
+model3 = lm(ADOS ~ Diagnosis, data=data)
+summary(data[data$Diagnosis=="ASD",]$ADOS)
+summary(data[data$Diagnosis=="TD",]$ADOS)
+summary(model3)
+#There's a significant difference between TD and ASD children in ADOS scores. 
+
+## VERBAL IQ STATS
+model4 = glm(verbalIQ ~ Diagnosis, family = gaussian, data)
+summary(data[data$Diagnosis=="ASD",]$verbalIQ)
+summary(data[data$Diagnosis=="TD",]$verbalIQ)
+summary(model4)
+#There's a significant difference between TD and ASD children, where TD children have an average score of 2.78 point higher with the verbal IQ. 
+
+## NON VERBAL IQ STATS
+model5 = glm(nonVerbalIQ ~ Diagnosis, family = gaussian, data)
+summary(data[data$Diagnosis=="ASD",]$nonVerbalIQ)
+summary(data[data$Diagnosis=="TD",]$nonVerbalIQ)
+summary(model5)
+#There's a non significant difference between TD and ASD children in non-verbal IQ, where TD children have a slighty lower nonVerbalIQ by approx. -0.89. 
+
+## NUMBER OF WORDS USED//TOKENS_CHI STATS 
+model6 = glm(tokens_CHI ~ Diagnosis, family = gaussian, data)
+summary(data[data$Diagnosis=="ASD",]$tokens_CHI)
+summary(data[data$Diagnosis=="TD",]$tokens_CHI)
+summary(model6)
+#There's a significant difference between TD and ASD children. 
+
+## NUMBER OF UNIQUE WORDS USED//TYPES_CHI 
+model7 = glm(types_CHI ~ Diagnosis, family = gaussian, data)
+summary(data[data$Diagnosis=="ASD",]$types_CHI)
+summary(data[data$Diagnosis=="TD",]$types_CHI)
+summary(model7)
+#There's a significant difference between TD and ASD children. 
+
+## LENGTH OF UTTERANCE CHI AND MOT 
+model8 = glm(CHI_MLU ~ Diagnosis, family = gaussian, data)
+summary(data[data$Diagnosis=="ASD",]$CHI_MLU)
+summary(data[data$Diagnosis=="TD",]$CHI_MLU)
+summary(model8)
+# TD children use significantly longer MLU by 0.66
+
+# MOT MLU
+model9 = glm(MOT_MLU ~ Diagnosis, family = gaussian, data)
+summary(data[data$Diagnosis=="ASD",]$MOT_MLU)
+summary(data[data$Diagnosis=="TD",]$MOT_MLU)
+summary(model9)
+# TD parents have significantly longer MLU than ASD parents, by 0.49 on average. 
+
+## Ethnicity
+model10 = glm(Ethnicity  ~ Diagnosis, family = binomial, data=data)
+summary(data[data$Diagnosis=="ASD",]$Ethnicity)
+summary(data[data$Diagnosis=="TD",]$Ethnicity)
+summary(model10)
+
+## Visit stats
+summary(data[data$Diagnosis == "ASD",]$Visit)
+summary(data[data$Diagnosis == "TD",]$Visit)
+model11 = glm(Visit~ Diagnosis, family = binomial, data=data)
+summary(model11)
+
+
+#Plot MLU over visit
+ggplot(data,aes(Visit, CHI_MLU, colour = Diagnosis))+geom_boxplot()
+ggplot(data, aes(Visit, MOT_MLU, colour = Diagnosis))+geom_boxplot()
+
+
+#to make plot with trendlines for MOT and CHI MLU
+data$Visit = as.integer(data$Visit)
+
+ggplot(data, aes(CHI_MLU, MOT_MLU, colour = Diagnosis))+geom_smooth(method ="lm")+geom_point()
+
+```
+
+
+
+## Let's test hypothesis 1: Children with ASD display a language impairment  (Exercise 2)
+
+### Hypothesis: The child's MLU changes: i) over time, ii) according to diagnosis
+
+Let's start with a simple mixed effects linear model
+
+Remember to plot the data first and then to run a statistical test.
+- Which variable(s) should be included as fixed factors?
+- Which variable(s) should be included as random factors?
+
+```{r}
+library(MuMIn)
+library(lmerTest)
+library(lme4)
+# Hypothesis 1: 
+
+#plot it
+ggplot(data,aes(Visit, CHI_MLU, color = Diagnosis))+
+  geom_point()+
+  geom_jitter()+
+  geom_smooth(method="lm")
+
+data$Visit = as.numeric(data$Visit)
+#model
+m1 = lmer(CHI_MLU~Visit+Diagnosis+(1+Visit|ID), data=data, REML = FALSE)
+summary(m1)
+r.squaredGLMM(m1) #this is a sucky model
+
+```
+
+How would you evaluate whether the model is a good model? 
+
+```{r}
+
+mnull = lmer(CHI_MLU ~ Diagnosis+ (1+Visit|ID), data, REML = F)
+r.squaredGLMM(mnull)
+anova(m1, mnull)
+summary(m1)
+
+# Time has a significiant effect 
+```
+
+Not too good, right? Let's check whether a growth curve model is better.
+Remember: a growth curve model assesses whether changes in time can be described by linear, or quadratic, or cubic (or... etc.) components.
+First build the different models, then compare them to see which one is better
+
+```{r}
+#growthcurve 
+library(nlme)
+
+Quadratic_m=lmer(CHI_MLU~Visit+I(Visit^2) + Diagnosis +(1+Visit|ID),data, REML=FALSE)
+Cubic_m=lmer(CHI_MLU~Visit+I(Visit^2)+I(Visit^3) + Diagnosis +(1+Visit|ID), data, REML=FALSE)
+anova(m1,Quadratic_m,Cubic_m)
+
+
+```
+
+Exciting right?
+Now it's time to report our results.
+Remember to report:
+- the estimates for each predictor (beta estimate, standard error, p-value)
+- A plain word description of the results
+
+Linguistic development of children MLU is affected by Visit (Beta = 0.23, se = 0.02, t-value = 9.516, p<0.05)
+
+
+## Let's test hypothesis 2: Parents speak equally to children with ASD and TD  (Exercise 3)
+
+### Hypothesis: Parental MLU changes: i) over time, ii) according to diagnosis
+
+```{r}
+
+library(ggplot2)
+
+#scatterplot
+ggplot(data,aes(Visit, MOT_MLU, color = Diagnosis))+
+  geom_point()+
+  geom_jitter()+
+  geom_smooth(method="lm")
+
+
+#create model with visit and diagnosis as fixed effects 
+m2 = lmer(MOT_MLU~Visit+Diagnosis+(1+Visit|ID), data, REML = F)
+summary(m2)
+r.squaredGLMM(m2) 
+
+```
+
+
+
+### Adding new variables (Exercise 4)
+
+Your task now is to figure out how to best describe the children linguistic trajectory. The dataset contains a bunch of additional demographic, cognitive and clinical variables (e.g.verbal and non-verbal IQ). Try them out and identify the statistical models that best describes your data (that is, the children's MLU). Describe how you selected the best model and send the code to run the model to Riccardo and Celine.
+
+
+```{r}
+
+chiModel1 = lmer(CHI_MLU ~ Diagnosis + nonVerbalIQ + (1+Visit|ID), data = data)
+summary(chiModel1)
+r.squaredGLMM(chiModel1)
+# nonVerbalIQ has a significant effect
+
+chiModel2 = lmer(CHI_MLU ~ Diagnosis + nonVerbalIQ + verbalIQ + tokens_CHI+ (1+Visit|ID), data = data)
+summary(chiModel2)
+r.squaredGLMM(chiModel2)
+#verbalIQ and tokens_CHI are significant
+
+chiModel3 = lmer(CHI_MLU ~ Diagnosis + nonVerbalIQ + verbalIQ + tokens_CHI+ types_CHI+(1+Visit|ID), data = data)
+summary(chiModel3)
+r.squaredGLMM(chiModel3)
+#only types_CHI significant
+
+
+chiModel4 = lmer(CHI_MLU ~ 1 + Visit + Diagnosis + types_CHI + verbalIQ + (1+Visit|ID), data = data)
+summary(chiModel4)
+r.squaredGLMM(chiModel4)
+
+chiModel5 = lmer(CHI_MLU ~ Visit + MOT_MLU + verbalIQ  + (1+Visit|ID), data = data)
+summary(chiModel5)
+r.squaredGLMM(chiModel5)
+
+## Anovas
+anova(chiModel1, chiModel2, chiModel3, chiModel4, chiModel5)
+
+r.squaredGLMM(chiModel5)
+r.squaredGLMM(chiModel4)
+r.squaredGLMM(chiModel2)
+# chiModel4 is too overfitted, and therefore we see, that CHI_MLU is best predicted by Visit, MOT_MLU and verbalIQ.
+
+```
+
+
